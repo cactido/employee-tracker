@@ -10,6 +10,7 @@ const connection = mysql.createConnection({
 });
 
 var roles = [];
+var roleIds = [];
 var managers = [];
 var managerIds = [];
 
@@ -124,7 +125,16 @@ async function menuPrompt() {
                     // find the corresponding ID for the selected manager to reference the employee.id column
                     // and change the prompt's String to that ID
                     data.manager = managerIds[managers.indexOf(data.manager)];
-                    console.log(data);
+                    // do the same for the selected role
+                    data.role = roleIds[roles.indexOf(data.role)];
+                    connection.query('INSERT INTO employee SET ?',
+                    {
+                        first_name: data.firstName,
+                        last_name: data.lastName,
+                        manager_id: data.manager,
+                        role_id: data.role
+                    });
+                    console.table(data);
                     menuPrompt();
                 })
                 break;
@@ -152,10 +162,11 @@ function updateManager() {
 }
 
 function getRoles() {
-    connection.query('SELECT title FROM role', (err, res) => {
+    connection.query('SELECT title, id FROM role', (err, res) => {
         if (err) throw err;
         res.forEach((data) => {
             roles.push(data.title);
+            roleIds.push(data.id);
         })
     })
 }

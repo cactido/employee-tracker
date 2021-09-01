@@ -1,11 +1,17 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
 const cTable = require('console.table');
+const { connect } = require('http2');
+const { get } = require('http');
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     database: 'employee_db'
 });
+
+var roles = [];
+var managers = [];
+var managerIds = [];
 
 function showAllEmployees() {
     connection.query(`SELECT employee.id,
@@ -20,6 +26,7 @@ function showAllEmployees() {
         LEFT JOIN employee m on employee.manager_id = m.id;`,
         (err, res) => {
             if (err) throw err;
+            console.log('');
             console.table(res);
             menuPrompt();
         });
@@ -35,6 +42,7 @@ function showByDepartment() {
     ORDER BY department.id;`,
     (err, res) => {
         if (err) throw err;
+        console.log('');
         console.table(res);
         menuPrompt();
     });
@@ -49,12 +57,15 @@ function showByManager() {
     ORDER BY m.id;`,
     (err, res) => {
         if (err) throw err;
+        console.log('');
         console.table(res);
         menuPrompt();
     });
 }
 
-function menuPrompt() {
+async function menuPrompt() {
+    if (!roles[0]) { getRoles(); }
+    if (!managers[0]) { getManagers(); }
     inquirer.prompt([
         {
             type: 'list',
@@ -70,29 +81,125 @@ function menuPrompt() {
                 'Update an employee\'s manager'
             ]
         }
-    ]).then((res) => {
-        switch (res.choice) {
+    ]).then(async (data) => {
+        switch (data.choice) {
             case 'View all employees':
                 showAllEmployees();
+                menuPrompt();
                 break;
             case 'View all employees by department':
                 showByDepartment();
+                menuPrompt();
                 break;
             case 'View all employees by manager':
                 showByManager();
+                menuPrompt();
                 break;
             case 'Add new employee':
+                await inquirer.prompt([
+                    {
+                         name: 'firstName',
+                         type: 'input',
+                         message: 'Enter new employee\'s first name: '
+                    },
+                    {
+                        name: 'lastName',
+                        type: 'input',
+                        message: 'Enter new employee\'s last name: '
+                    },
+                    {
+                        name: 'role',
+                        type: 'list',
+                        message: 'Choose new employee\'s role: ',
+                        choices: roles
+                    },
+                    {
+                        name: 'manager',
+                        type: 'list',
+                        message: 'Choose new employee\'s manager: ',
+                        choices: managers
+                    }
+                ])
+                .then(data => {
+                    // find the corresponding ID for the selected manager to reference the employee.id column
+                    // and change the prompt's String to that ID
+                    data.manager = managerIds[managers.indexOf(data.manager)];
+                    console.log(data);
+                    menuPrompt();
+                })
                 break;
             case 'Remove an employee':
+                menuPrompt();
                 break;
             case 'Update an employee\'s role':
-                console.log(res.choice);
+                updateRole();
+                menuPrompt();
                 break;
             case 'Update an employee\'s manager':
+                updateManager();
+                menuPrompt();
                 break;
         }
     })
 }
 
+function updateRole() {
+    console.log(roles);
+}
+
+function updateManager() {
+    console.log(managers);
+}
+
+function getRoles() {
+    connection.query('SELECT title FROM role', (err, res) => {
+        if (err) throw err;
+        res.forEach((data) => {
+            roles.push(data.title);
+        })
+    })
+}
+
+function getManagers() {
+    connection.query('SELECT CONCAT(first_name, " ", last_name ) AS name, id FROM employee WHERE manager_id IS NULL', (err, res) => {
+        if (err) throw err;
+        res.forEach((data) => {
+            managers.push(data.name);
+            managerIds.push(data.id);
+        })
+        return;
+    })
+}
+
+function addEmployee() {
+    return inquirer.prompt([
+        {
+             name: 'firstName',
+             type: 'input',
+             message: 'Enter new employee\'s first name: '
+        },
+        {
+            name: 'lastName',
+            type: 'input',
+            message: 'Enter new employee\'s last name: '
+        },
+        {
+            name: 'role',
+            type: 'list',
+            message: 'Choose new employee\'s role: ',
+            choices: roles
+        },
+        {
+            name: 'manager',
+            type: 'list',
+            message: 'Choose new employee\'s manager: ',
+            choices: managers
+        }
+    ])
+    .then(data => {
+        console.log(data);
+    })
+    .then(menuPrompt());
+}
+
 menuPrompt();
-//showAllEmployees();

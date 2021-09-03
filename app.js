@@ -13,6 +13,8 @@ var roles = [];
 var roleIds = [];
 var managers = [];
 var managerIds = [];
+var employees = [];
+var employeeIds = [];
 
 function showAllEmployees() {
     connection.query(`SELECT employee.id,
@@ -64,7 +66,8 @@ function showByManager() {
     });
 }
 
-async function menuPrompt() {
+function menuPrompt() {
+    getEmployees();
     if (!roles[0]) { getRoles(); }
     if (!managers[0]) { getManagers(); }
     inquirer.prompt([
@@ -139,6 +142,18 @@ async function menuPrompt() {
                 })
                 break;
             case 'Remove an employee':
+                await inquirer.prompt([
+                    {
+                        name: 'employee',
+                        type: 'list',
+                        message: 'Select employee to delete: ',
+                        choices: employees
+                    }
+                ])
+                .then(data => {
+                    var deleteId = employeeIds[employees.indexOf(data.employee)];
+                    connection.query('DELETE FROM employee WHERE ?', { id: deleteId });
+                })
                 menuPrompt();
                 break;
             case 'Update an employee\'s role':
@@ -153,8 +168,23 @@ async function menuPrompt() {
     })
 }
 
+function getEmployees() {
+    connection.query('SELECT CONCAT(first_name, " ", last_name) AS name, id FROM employee', (err, res) => {
+        if (err) throw err;
+        employees.length = 0;
+        employeeIds.length = 0;
+        res.forEach((data) => {
+            employees.push(data.name);
+            employeeIds.push(data.id);
+        })
+    })
+}
+
 function updateRole() {
-    console.log(roles);
+    connection.query('SELECT title, id FROM role', (err, res) => {
+        console.log(res);
+        console.log(res[0].title);
+    })
 }
 
 function updateManager() {
@@ -173,44 +203,13 @@ function getRoles() {
 
 function getManagers() {
     connection.query('SELECT CONCAT(first_name, " ", last_name ) AS name, id FROM employee WHERE manager_id IS NULL', (err, res) => {
-        if (err) throw err;
+        if (err)
+            throw err;
         res.forEach((data) => {
             managers.push(data.name);
             managerIds.push(data.id);
-        })
-        return;
+        });
     })
-}
-
-function addEmployee() {
-    return inquirer.prompt([
-        {
-             name: 'firstName',
-             type: 'input',
-             message: 'Enter new employee\'s first name: '
-        },
-        {
-            name: 'lastName',
-            type: 'input',
-            message: 'Enter new employee\'s last name: '
-        },
-        {
-            name: 'role',
-            type: 'list',
-            message: 'Choose new employee\'s role: ',
-            choices: roles
-        },
-        {
-            name: 'manager',
-            type: 'list',
-            message: 'Choose new employee\'s manager: ',
-            choices: managers
-        }
-    ])
-    .then(data => {
-        console.log(data);
-    })
-    .then(menuPrompt());
 }
 
 menuPrompt();

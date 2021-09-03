@@ -1,8 +1,6 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
 const cTable = require('console.table');
-const { connect } = require('http2');
-const { get } = require('http');
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
@@ -33,7 +31,6 @@ function showAllEmployees() {
             if (err) throw err;
             console.log('');
             console.table(res);
-            menuPrompt();
         });
 }
 
@@ -49,7 +46,6 @@ function showByDepartment() {
         if (err) throw err;
         console.log('');
         console.table(res);
-        menuPrompt();
     });
 }
 
@@ -64,7 +60,6 @@ function showByManager() {
         if (err) throw err;
         console.log('');
         console.table(res);
-        menuPrompt();
     });
 }
 
@@ -143,8 +138,8 @@ function menuPrompt() {
                         role_id: data.role
                     });
                     console.table(data);
-                    menuPrompt();
                 })
+                menuPrompt();
                 break;
             case 'Remove an employee':
                 await inquirer.prompt([

@@ -82,7 +82,9 @@ function menuPrompt() {
                 'Add new employee',
                 'Remove an employee',
                 'Update an employee\'s role',
-                'Update an employee\'s manager'
+                'Update an employee\'s manager',
+                'Add new department',
+                'Add new role'
             ]
         }
     ]).then(async (data) => {
@@ -196,8 +198,20 @@ function menuPrompt() {
                 .then(data => {
                     data.employee = employeeIds[employees.indexOf(data.employee)];
                     data.newManager = managerIds[roles.indexOf(data.newManager)];
-                    console.log('employee ID: ', data.employee, ' new role ID: ', data.newRole);
-                    connection.query(`UPDATE employee SET role_id = ${data.newRole} WHERE id = ${data.employee}`);
+                    connection.query(`UPDATE employee SET manager_id = ${data.newManager} WHERE id = ${data.employee}`);
+                })
+                menuPrompt();
+                break;
+            case 'Add new department':
+                await inquirer.prompt([
+                    {
+                        name: 'department',
+                        type: 'input',
+                        message: 'Enter the department\'s name: ',
+                    }
+                ])
+                .then(data => {
+                    connection.query(`INSERT INTO department SET name = ${data.department}`);
                 })
                 menuPrompt();
                 break;

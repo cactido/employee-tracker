@@ -68,8 +68,8 @@ function showByManager() {
 
 function menuPrompt() {
     getEmployees();
-    if (!roles[0]) { getRoles(); }
-    if (!managers[0]) { getManagers(); }
+    getRoles();
+    getManagers();
     inquirer.prompt([
         {
             type: 'list',
@@ -146,7 +146,7 @@ function menuPrompt() {
                     {
                         name: 'employee',
                         type: 'list',
-                        message: 'Select employee to delete: ',
+                        message: 'Select employee to remove: ',
                         choices: employees
                     }
                 ])
@@ -157,11 +157,48 @@ function menuPrompt() {
                 menuPrompt();
                 break;
             case 'Update an employee\'s role':
-                updateRole();
+                await inquirer.prompt([
+                    {
+                        name: 'employee',
+                        type: 'list',
+                        message: 'Select employee to update: ',
+                        choices: employees
+                    },
+                    {
+                        name: 'newRole',
+                        type: 'list',
+                        message: 'Change to which role?',
+                        choices: roles
+                    }
+                ])
+                .then(data => {
+                    data.employee = employeeIds[employees.indexOf(data.employee)];
+                    data.newRole = roleIds[roles.indexOf(data.newRole)];
+                    connection.query(`UPDATE employee SET role_id = ${data.newRole} WHERE id = ${data.employee}`);
+                })
                 menuPrompt();
                 break;
             case 'Update an employee\'s manager':
-                updateManager();
+                await inquirer.prompt([
+                    {
+                        name: 'employee',
+                        type: 'list',
+                        message: 'Select employee to update: ',
+                        choices: employees
+                    },
+                    {
+                        name: 'newManager',
+                        type: 'list',
+                        message: 'Change to which manager?',
+                        choices: managers
+                    }
+                ])
+                .then(data => {
+                    data.employee = employeeIds[employees.indexOf(data.employee)];
+                    data.newManager = managerIds[roles.indexOf(data.newManager)];
+                    console.log('employee ID: ', data.employee, ' new role ID: ', data.newRole);
+                    connection.query(`UPDATE employee SET role_id = ${data.newRole} WHERE id = ${data.employee}`);
+                })
                 menuPrompt();
                 break;
         }
@@ -194,6 +231,8 @@ function updateManager() {
 function getRoles() {
     connection.query('SELECT title, id FROM role', (err, res) => {
         if (err) throw err;
+        roles.length = 0;
+        roleIds.length = 0;
         res.forEach((data) => {
             roles.push(data.title);
             roleIds.push(data.id);
@@ -203,8 +242,9 @@ function getRoles() {
 
 function getManagers() {
     connection.query('SELECT CONCAT(first_name, " ", last_name ) AS name, id FROM employee WHERE manager_id IS NULL', (err, res) => {
-        if (err)
-            throw err;
+        if (err) throw err;
+        managers.length = 0;
+        managerIds.length = 0;
         res.forEach((data) => {
             managers.push(data.name);
             managerIds.push(data.id);

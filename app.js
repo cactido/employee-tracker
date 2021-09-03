@@ -15,6 +15,8 @@ var managers = [];
 var managerIds = [];
 var employees = [];
 var employeeIds = [];
+var departments = [];
+var departmentIds = [];
 
 function showAllEmployees() {
     connection.query(`SELECT employee.id,
@@ -70,6 +72,7 @@ function menuPrompt() {
     getEmployees();
     getRoles();
     getManagers();
+    getDepartments();
     inquirer.prompt([
         {
             type: 'list',
@@ -211,7 +214,37 @@ function menuPrompt() {
                     }
                 ])
                 .then(data => {
-                    connection.query(`INSERT INTO department SET name = ${data.department}`);
+                    connection.query('INSERT INTO department SET ?', { name: data.department });
+                })
+                menuPrompt();
+                break;
+            case 'Add new role':
+                await inquirer.prompt([
+                    {
+                        name: 'title',
+                        type: 'input',
+                        message: 'Enter the new role\'s title: '
+                    },
+                    {
+                        name: 'salary',
+                        type: 'input',
+                        message: 'Enter the new role\'s salary: '
+                    },
+                    {
+                        name: 'department',
+                        type: 'list',
+                        message: 'Add to which department?',
+                        choices: departments
+                    }
+                ])
+                .then(data => {
+                    data.department = departmentIds[departments.indexOf(data.department)];
+                    connection.query('INSERT INTO role SET ?',
+                    {
+                        title: data.title,
+                        salary: data.salary,
+                        department_id: data.department
+                    });
                 })
                 menuPrompt();
                 break;
@@ -229,17 +262,6 @@ function getEmployees() {
             employeeIds.push(data.id);
         })
     })
-}
-
-function updateRole() {
-    connection.query('SELECT title, id FROM role', (err, res) => {
-        console.log(res);
-        console.log(res[0].title);
-    })
-}
-
-function updateManager() {
-    console.log(managers);
 }
 
 function getRoles() {
@@ -262,6 +284,18 @@ function getManagers() {
         res.forEach((data) => {
             managers.push(data.name);
             managerIds.push(data.id);
+        });
+    })
+}
+
+function getDepartments() {
+    connection.query('SELECT name, id FROM department', (err, res) => {
+        if (err) throw err;
+        departments.length = 0;
+        departmentIds.length = 0;
+        res.forEach((data) => {
+            departments.push(data.name);
+            departmentIds.push(data.id);
         });
     })
 }

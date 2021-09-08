@@ -5,7 +5,8 @@ Employee Tracker is a command-line application that allows you to keep track of 
 
 ## Technology Used
 - JavaScript/Node
-- SQL/MySQL2
+- SQL/MySQL2  
+- Inquirer
 
 ## Links
 - [GitHub Repository](https://github.com/cactido/employee-tracker)  

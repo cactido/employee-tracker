@@ -195,7 +195,7 @@ function menuPrompt() {
                 ])
                 .then(data => {
                     data.employee = employeeIds[employees.indexOf(data.employee)];
-                    data.newManager = managerIds[roles.indexOf(data.newManager)];
+                    data.newManager = managerIds[managers.indexOf(data.newManager)];
                     connection.query(`UPDATE employee SET manager_id = ${data.newManager} WHERE id = ${data.employee}`);
                 })
                 menuPrompt();
